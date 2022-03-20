@@ -87,43 +87,30 @@ class LightAlteringState(LightEntity):
         return
 
     def alter_values(self):
-        """This method alter some values in other integrations."""
-        altering_hello_world = False
-        toggle_target_switch = True
+        """This method alter the state of a target integrations."""
+        
+        t_state = self.hass.states.get(self._target)
+        print(self._target + " - actual state: " + t_state.state)
 
-        if altering_hello_world:
-            # Altering hello_world component
-            hw_domain = "hello_world"
-            component_available = self.hass.states.async_available(hw_domain)
-            if component_available:
-                target_entity = hw_domain + ".Hello_World"
-                self.hass.states.set(hw_domain + ".Hello_World", "Altered!")
-                self.hass.states.set(hw_domain + ".New_Entity", 42)
-                print(target_entity + " value changed")
+        if self._use_api:  # Updating component using APIs
+            self.hass.services.call(
+                domain="switch",
+                service="toggle",
+                service_data={"entity_id": self._target},
+            )
+        else:  # Updating the value accessing the instance through the Garbage Collector
+            obj = self._get_target("Switch Target")
+            if obj:
+                obj.toggle()
+            else:
+                print("Switch Target not found!")
 
-        if toggle_target_switch:
-            t_state = self.hass.states.get(self._target)
-            print(self._target + " - actual state: " + t_state.state)
+        # Waiting for update
+        time.sleep(2)
 
-            if self._use_api:  # Updating component using APIs
-                self.hass.services.call(
-                    domain="switch",
-                    service="toggle",
-                    service_data={"entity_id": self._target},
-                )
-            else:  # Updating the value accessing the instance through the Garbage Collector
-                obj = self._get_target("Switch Target")
-                if obj:
-                    obj.toggle()
-                else:
-                    print("Switch Target not found!")
-
-            # Waiting for update
-            time.sleep(2)
-
-            # Recupero e stampo lo stato aggiornato
-            t_state = self.hass.states.get(self._target)
-            print(self._target + " new state: " + t_state.state)
+        # Recupero e stampo lo stato aggiornato
+        t_state = self.hass.states.get(self._target)
+        print(self._target + " actual state: " + t_state.state)
 
         return True
     
