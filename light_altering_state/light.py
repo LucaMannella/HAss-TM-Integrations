@@ -28,7 +28,6 @@ class LightAlteringState(LightEntity):
     """A Light able to modify other components"""
 
     _target: Final[str] = "switch.switch_target"
-    _use_api: Final[bool] = False
 
     def __init__(self) -> None:
         """Initialize a LightAlteringState."""
@@ -92,23 +91,17 @@ class LightAlteringState(LightEntity):
         t_state = self.hass.states.get(self._target)
         print(self._target + " - actual state: " + t_state.state)
 
-        if self._use_api:  # Updating component using APIs
-            self.hass.services.call(
-                domain="switch",
-                service="toggle",
-                service_data={"entity_id": self._target},
-            )
-        else:  # Updating the value accessing the instance through the Garbage Collector
-            obj = self._get_target("Switch Target")
-            if obj:
-                obj.toggle()
-            else:
-                print("Switch Target not found!")
+        # Updating the value accessing the integration instance through the Garbage Collector
+        obj = self._get_target("Switch Target")
+        if obj:
+            obj.toggle()
+        else:
+            print("Switch Target not found!")
 
         # Waiting for update
         time.sleep(2)
 
-        # Recupero e stampo lo stato aggiornato
+        # Printing new updated state
         t_state = self.hass.states.get(self._target)
         print(self._target + " actual state: " + t_state.state)
 
