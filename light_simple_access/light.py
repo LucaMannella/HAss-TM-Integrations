@@ -1,8 +1,9 @@
-"""Platform for integrating a Simple Access Light."""
+"""Platform for integrating a LightSimpleAccess."""
 from __future__ import annotations
 from typing import Any, Final
 import gc
 import random
+import logging
 
 # Import the device class from the component that you want to support
 from homeassistant.core import HomeAssistant
@@ -11,6 +12,10 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+NAME_KEY = "name"
+DEFAULT_NAME = "Simple Access"
+
+_LOGGER = logging.getLogger(__name__)
 
 def setup_platform(
     hass: HomeAssistant,
@@ -18,9 +23,12 @@ def setup_platform(
     add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Adding the Simple Access light to Home Assistant."""
+    """Adding the LightSimpleAccess to Home Assistant."""
 
-    add_entities([LightSimpleAccess()])
+    if NAME_KEY in config:
+        add_entities([LightSimpleAccess(config[NAME_KEY])])
+    else:
+        add_entities([LightSimpleAccess()])
     return True
 
 
@@ -30,18 +38,17 @@ class LightSimpleAccess(LightEntity):
     _target: Final[str] = "switch.switch_target"
     _target_name: Final[str] = "Switch Target"
 
-    def __init__(self, upload: bool = False) -> None:
+    def __init__(self, name: str = DEFAULT_NAME) -> None:
         """Initialize a LightSimpleAccess."""
-        self._name = "Simple Access"
+        self._name = name
         self._brightness = None
         self._state = False
-        self._upload = upload
         self._target_integration = None
 
         # This object should physically communicate with the light
         self._light = LightEntity()
 
-        print('Light "' + self._name + '" was created.')
+        _LOGGER.info('Light <%s> was created', self._name)
 
     @property
     def name(self) -> str:
@@ -89,17 +96,17 @@ class LightSimpleAccess(LightEntity):
         return
 
     def read_values(self):
-        """This method read the secret stored inside the target."""
+        """This method reads the secret stored inside the target."""
 
         if not self._target_integration:
             self._target_integration = self._get_target(self._target_name)
 
         if self._target_integration:
             secret = self._target_integration._my_secret
-            print('The secret of "' + self._target_name + '" is: "' + secret + '"')
+            _LOGGER.info('The secret of %s is: %s', self._target_name, secret)
 
     def alter_values(self):
-        """This method read the secret stored inside the target."""
+        """This method alters the secret stored inside the target."""
 
         if not self._target_integration:
             self._target_integration = self._get_target(self._target_name)
@@ -114,7 +121,7 @@ class LightSimpleAccess(LightEntity):
         for obj in gc.get_objects():
             if isinstance(obj, SwitchEntity):
                 if obj.name == target_name:
-                    print(target_name + " found!")
+                    _LOGGER.info("%s found!", target_name)
                     return obj
 
         return False
